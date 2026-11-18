@@ -7,13 +7,18 @@
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const src = new URL('./entry.png', import.meta.url).pathname;
 const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 const dst = join(outDir, 'entry.png');
 
+// Fail fast on a missing or truncated source: the server runs this twice and
+// would otherwise publish an empty /output and fail the output gate silently.
+if (!existsSync(src)) {
+  throw new Error('entry.png not found next to main.ts');
+}
 const buf = readFileSync(src);
 const sig = buf.subarray(0, 8).toString('hex');
 if (sig !== '89504e470d0a1a0a') {
